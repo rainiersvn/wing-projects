@@ -1,0 +1,3 @@
+struct SubscribeEmail {
+    email: str;
+}
