@@ -1,43 +1,30 @@
 [CmdletBinding()]
 param (
-    [ValidateSet("init", "plan", "apply", "rm-lock", "rm-state", "tidy", "destroy")][string]$TerraformOperation,
+    [ValidateSet("compile", "apply", "compile-apply")][string]$WingOperation = "compile-apply",
     [string]$Flag
 )
 process {
-    Write-Host "Compiling wing modules..." 
-    wing compile -t tf-aws --plugins=plugin.terraform.js main.w
-    $workDir = "target\main.tfaws"
-    Set-Location $workDir
-    Write-Host "Working..." 
-    & terraform init
-    if ($TerraformOperation -eq "init") {
-        Write-Host "Initing..."
-        & terraform $TerraformOperation -upgrade
+    if ($WingOperation -eq "compile") {
+        Write-Host "Compiling all wing modules..."
+        & wing compile main.w
+        & wing compile -t tf-aws --plugins=plugin.terraform.js main.w
     }
-    elseif ($TerraformOperation -eq "plan") {
-        Write-Host "Planning..."
-        & terraform $TerraformOperation
+    elseif ($WingOperation -eq "apply") {
+        $workDir = "target\main.tfaws"
+        Set-Location $workDir
+        Write-Host "Terraforming the wings..." 
+        & terraform init
+        & terraform apply
+        & cd ../../
     }
-    elseif ($TerraformOperation -eq "apply") {
-        Write-Host "Applying..." -ForegroundColor DarkGreen
-        & terraform $TerraformOperation
+    elseif ($WingOperation -eq "compile-apply") {
+        Write-Host "Compiling wing modules..." 
+        wing compile -t tf-aws --plugins=plugin.terraform.js main.w
+        $workDir = "target\main.tfaws"
+        Set-Location $workDir
+        Write-Host "Terraforming the wings..." 
+        & terraform init
+        & terraform apply
+        & cd ../../
     }
-    elseif ($TerraformOperation -eq "destroy") {
-        Write-Host "Destroying..." -ForegroundColor DarkRed
-        & terraform $TerraformOperation
-    }
-    elseif ($TerraformOperation -eq "rm-lock") {
-        Write-Host "Removing troublesome state lock flag"
-        & terraform force-unlock $Flag
-    }
-    elseif ($TerraformOperation -eq "rm-state") {
-        Write-Host "Removing troublesome state"
-        & terraform state rm $TerraformOperation
-    }
-    elseif ($TerraformOperation -eq "tidy") {
-        Write-Host "Formatting and validating your terraform"
-        & terraform fmt 
-        & terraform validate
-    }
-    cd ../../
 }

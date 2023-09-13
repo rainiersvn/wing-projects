@@ -1,13 +1,6 @@
 bring cloud;
 bring "./postBoii.w" as postBoii;
-
-let sendEmail = inflight (msg: str): void => {
-    try {
-        log("SEND EMAIL MSG: ${msg}");
-    } catch err {
-        log("Error during email queueing: ${err}");
-    }
-};
+bring "./structs.w" as structs;
 
 let postBoiiHandler = new postBoii.PostBoii("cloudkid-emails-wing");
 
@@ -33,7 +26,36 @@ postBoiiApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.
 
 postBoiiApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     if let body = request.body {
-        postBoiiHandler.queueEmail(Json.parse(body));
+        log("BODY -> ${body}");
+        
+        // let emailData = structs.SendEmail.fromJson(body);
+        let emailData: Json = Json.parse(body);
+        log("emailData -> ${emailData}");
+
+        let emailTemplate = {
+            Destination: {
+                ToAddresses: emailData.get("to")
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: "UTF-8",
+                        Data: emailData.get("message")
+                    }
+                },
+                Subject: {
+                    Charset: "UTF-8",
+                    Data: emailData.get("subject")
+                }
+            },
+            Source: "notifications@cloudkid.lin",
+            ReplyToAddresses: [
+                "info@cloudkid.link",
+            ],
+        };
+        log("emailData -> ${emailTemplate}");
+        // log("Email to queue: ${emailTemplate}");
+        postBoiiHandler.queueEmail(emailTemplate);
         return cloud.ApiResponse {
             status: 201,
             body: request.body

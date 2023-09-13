@@ -36,30 +36,30 @@ exports.postSynth = function(config) {
     }
     // console.log("cloud-kid-emails dynamoDB config", config.resource.aws_dynamodb_table.postBoiiPostBoii_exTable_A238B328);
   
-    // Lambda Config
-    const SUBSCRIBE_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-cdafee6e_A6C8366F"];
-    const QUEUE_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-86898773_701F5CA7"];
-    const SEND_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-3fc9280c_5DA20E7A"];
-    // const LAMBDA_CONFIG_ORIGINAL = config.resource.aws_lambda_function;
-    config.resource.aws_lambda_function = {
-        ...config.resource.aws_lambda_function,
-        //
-        "cloudApi_cloudApi-OnRequest-cdafee6e_A6C8366F": { 
-            ...SUBSCRIBE_EMAIL_LAMBDA_CONFIG,
-            function_name: CK_SUBSCRIBE_EMAIL_LAMBDA_NAME,
-            description: "Lambda function for subscribing emails through PostBoii service"
-        },
-        "cloudApi_cloudApi-OnRequest-86898773_701F5CA7": {
-            ...QUEUE_EMAIL_LAMBDA_CONFIG,
-            function_name: CK_QUEUE_EMAIL_LAMBDA_NAME,
-            description: "Lambda function for queueing emails through PostBoii service"
-        },
-        "cloudApi_cloudApi-OnRequest-3fc9280c_5DA20E7A": {
-            ...SEND_EMAIL_LAMBDA_CONFIG,
-            function_name: CK_SEND_EMAIL_LAMBDA_NAME,
-            description: "Lambda function for sending emails through PostBoii service"
-        },
-    }
+    // // Lambda Config
+    // const SUBSCRIBE_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-cdafee6e_A6C8366F"];
+    // const QUEUE_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-86898773_701F5CA7"];
+    // const SEND_EMAIL_LAMBDA_CONFIG = config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-3fc9280c_5DA20E7A"];
+    // // const LAMBDA_CONFIG_ORIGINAL = config.resource.aws_lambda_function;
+    // config.resource.aws_lambda_function = {
+    //     ...config.resource.aws_lambda_function,
+    //     //
+    //     "cloudApi_cloudApi-OnRequest-cdafee6e_A6C8366F": { 
+    //         ...SUBSCRIBE_EMAIL_LAMBDA_CONFIG,
+    //         function_name: CK_SUBSCRIBE_EMAIL_LAMBDA_NAME,
+    //         description: "Lambda function for subscribing emails through PostBoii service"
+    //     },
+    //     "cloudApi_cloudApi-OnRequest-86898773_701F5CA7": {
+    //         ...QUEUE_EMAIL_LAMBDA_CONFIG,
+    //         function_name: CK_QUEUE_EMAIL_LAMBDA_NAME,
+    //         description: "Lambda function for queueing emails through PostBoii service"
+    //     },
+    //     "cloudApi_cloudApi-OnRequest-3fc9280c_5DA20E7A": {
+    //         ...SEND_EMAIL_LAMBDA_CONFIG,
+    //         function_name: CK_SEND_EMAIL_LAMBDA_NAME,
+    //         description: "Lambda function for sending emails through PostBoii service"
+    //     }
+    // }
     // console.log("LAMBDA_CONFIG config", config.resource.aws_lambda_function["cloudApi_cloudApi-OnRequest-cdafee6e_A6C8366F"]);
     
     // API Gateway Config
