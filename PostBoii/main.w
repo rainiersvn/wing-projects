@@ -1,4 +1,5 @@
 bring cloud;
+bring http;
 bring "./postBoii.w" as postBoii;
 
 let sendEmail = inflight (msg: str): void => {
@@ -24,7 +25,7 @@ postBoiiApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.
         log("Email to subscribe: ${email}");
         let response = postBoiiHandler.subscribeEmail(email);
 
-        return cloud.ApiResponse {
+        return {
             status: 201,
             body: response
         };
@@ -34,7 +35,7 @@ postBoiiApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.
 postBoiiApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     if let body = request.body {
         postBoiiHandler.queueEmail(Json.parse(body));
-        return cloud.ApiResponse {
+        return {
             status: 201,
             body: request.body
         };
@@ -44,9 +45,19 @@ postBoiiApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiR
 postBoiiApi.post("/unsubscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     if let body = request.body {
         let response = postBoiiHandler.unsubscribeEmail(Json.parse(body));
-        return cloud.ApiResponse {
+        return {
             status: 204,
             body: response
         };
     }
 });
+
+test "queue email" {
+    let payload = postBoii.Payload {
+        message: "how are you dude?",
+        subject: "hello, world!",
+        to: "ping@wing.cloud"
+    };
+
+    http.post("${postBoiiApi.url}/queueEmail", body: Json.stringify(payload));
+}

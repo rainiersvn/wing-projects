@@ -1,15 +1,19 @@
 bring cloud;
 bring ex;
 
+struct Payload {
+    to: str;
+    message: str;
+    subject: str;
+}
+
 class PostBoii  {
     ck_postboii_emails: ex.Table;
     emailQueue: cloud.Queue;
 
     extern "./util/util.js" static inflight randomUUID(): str;
     extern "./util/util.js" static inflight createdDate(): str;
-    // extern "./util/sendEmail.js" static inflight sendEmail(payload: str);
-    extern "aws-sdk" static inflight sendEmail(params: Json): str;
-
+    extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
     
     init(tableName: str) {
         this.emailQueue = new cloud.Queue();
@@ -21,12 +25,13 @@ class PostBoii  {
                 createdDate: ex.ColumnType.STRING
             }
         );
+
         // This is the sendEMail functionality
         this.emailQueue.setConsumer(inflight (msg: str) => {
             try {
                 log("SEND EMAIL MSG");
                 log(msg);
-                // PostBoii.sendEmail(msg);
+                PostBoii.sendEmail(msg);
             } catch err {
                 log("Error during email queueing: ${err}");
             }

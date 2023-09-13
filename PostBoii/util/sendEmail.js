@@ -1,22 +1,23 @@
-const AWS = require('aws-sdk');
-const ses = new AWS.SES({ apiVersion: '2010-12-01' });
+import { SES } from "@aws-sdk/client-ses";
 
-async function sendEmail(payload) {
-    console.log("payload", payload);
+export async function sendEmail(payload) {
+    const ses = new SES();
+    console.error("payload", payload);
     const params = {
         Destination: {
-            ToAddresses: [payload['to']]
+
+            ToAddresses: [payload.to]
         },
         Message: {
             Body: {
                 Html: {
                     Charset: "UTF-8",
-                    Data: payload['message']
+                    Data: payload.message
                 }
             },
             Subject: {
                 Charset: 'UTF-8',
-                Data: payload['subject']
+                Data: payload.subject
             }
         },
         Source: 'notifications@cloudkid.link',
@@ -28,18 +29,18 @@ async function sendEmail(payload) {
 
     try {
         // const data = await ses.sendEmail(params).promise();
-        const data = ses.sendEmail(params);
+        const data = await ses.sendEmail(params);
         console.log("Email sent", data);
         // return true;
     } catch (err) {
         console.error("Error sending email", err);
         throw new Error("Error sending email: " + err.message);
     }
-};
+}
 
-sendEmail({
-    "type": "raw",
-    "message": "Test",
-    "to": "rainiersvn1@gmail.com",
-    "subject": "testEmail"
-  });
+// sendEmail({
+//     "type": "raw",
+//     "message": "Test",
+//     "to": "rainiersvn1@gmail.com",
+//     "subject": "testEmail"
+// });
