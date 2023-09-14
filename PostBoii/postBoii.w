@@ -1,6 +1,11 @@
 bring cloud;
 bring ex;
-// bring "./types/SendEmail.w" as SendEmail;
+
+struct Payload {
+    to: str;
+    message: str;
+    subject: str;
+}
 
 class PostBoii  {
     ck_postboii_emails: ex.Table;
@@ -8,8 +13,8 @@ class PostBoii  {
 
     extern "./util/util.js" static inflight randomUUID(): str;
     extern "./util/util.js" static inflight createdDate(): str;
-    extern "./util/sendEmail.js" static inflight sendEmail(params: Json): str;
-    // extern "aws-sdk" static inflight sendEmail(params: Json): str;
+    extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
+    extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
     
     init(tableName: str) {
         this.emailQueue = new cloud.Queue();
@@ -21,16 +26,13 @@ class PostBoii  {
                 createdDate: ex.ColumnType.STRING
             }
         );
-        // This is the sendEMail functionality
-        this.emailQueue.setConsumer(inflight (msg: str) => {
+        // This is the sendEmail functionality
+        this.emailQueue.setConsumer(inflight (email: str) => {
             try {
-                log("SEND EMAIL MSG");
-                log(Json msg);
-                let emailBody = Json msg;
-                log("PARSED EMAIL BODY ${emailBody}");
-                PostBoii.sendEmail(emailBody);
+                log("Sending email...");
+                PostBoii.sendEmail(email);
             } catch err {
-                log("Error during email queueing: ${err}");
+                log("Error during email sending: ${err}");
             }
         } );
     }
@@ -55,10 +57,32 @@ class PostBoii  {
         }
     }
 
-    inflight queueEmail(messageJson: Json) {
+    inflight queueEmail(payload: Json) {
         try {
-            this.emailQueue.push(messageJson);
-            log("Email queued: ${messageJson}");
+            let emailTemplate = {
+                Destination: {
+                    ToAddresses: [payload.get("to")]
+                },
+                Message: {
+                    Body: {
+                        Html: {
+                            Charset: "UTF-8",
+                            Data: payload.get("message")
+                        }
+                    },
+                    Subject: {
+                        Charset: "UTF-8",
+                        Data: payload.get("subject")
+                    }
+                },
+                Source: "notifications@cloudkid.link",
+                ReplyToAddresses: [
+                    "info@cloudkid.link",
+                ],
+            };
+
+            log("Queuing email template: ${emailTemplate}");
+            this.emailQueue.push(emailTemplate);
         } catch err {
             log("Error during email queueing: ${err}");
         }

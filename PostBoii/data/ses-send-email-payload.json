@@ -1,0 +1,21 @@
+{
+    "Destination": {
+        "ToAddresses": "test@gmail.com"
+    },
+    "Message": {
+        "Body": {
+            "Html": {
+                "Charset": "UTF-8",
+                "Data": "Email body of test email data"
+            }
+        },
+        "Subject": {
+            "Charset": "UTF-8",
+            "Data": "Test Email Data"
+        }
+    },
+    "Source": "notifications@cloudkid.link",
+    "ReplyToAddresses": [
+        "info@cloudkid.link"
+    ]
+}
