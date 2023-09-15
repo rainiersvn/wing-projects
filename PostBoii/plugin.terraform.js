@@ -6,6 +6,8 @@ const {
     CK_POSTBOII_SEND_EMAIL_QUEUE_NAME,
     CK_QUEUE_EMAIL_LAMBDA_NAME,
     CK_SEND_EMAIL_LAMBDA_NAME,
+    DYNAMO_DB_PITR_ENABLED,
+    DYNAMO_DB_DELETION_PROTECTION_ENABLED,
 } = require("./constants"); 
 
 exports.postSynth = function(config) {
@@ -29,9 +31,13 @@ exports.postSynth = function(config) {
     const DYNAMO_DB_CONFIG_ORIGINAL = config.resource.aws_dynamodb_table;
     config.resource.aws_dynamodb_table = {
         ...DYNAMO_DB_CONFIG_ORIGINAL,
-        postBoiiPostBoii_exTable_A238B328: {
+        "postBoiiPostBoii_exTable_A238B328": {
             ...DYNAMO_DB_CONFIG,
-            name: CK_EMAILS_DB_NAME
+            name: CK_EMAILS_DB_NAME,
+            point_in_time_recovery: {
+                enabled: DYNAMO_DB_PITR_ENABLED,
+            },
+            deletion_protection_enabled: DYNAMO_DB_DELETION_PROTECTION_ENABLED,
         }
     }
     // console.log("cloud-kid-emails dynamoDB config", config.resource.aws_dynamodb_table.postBoiiPostBoii_exTable_A238B328);

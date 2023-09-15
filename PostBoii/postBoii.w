@@ -8,14 +8,16 @@ struct Payload {
 }
 
 class PostBoii  {
-    ck_postboii_emails: ex.Table;
+    ck_postboii_emails: ex.Table ;
     emailQueue: cloud.Queue;
+    ck_postboii_sent_emails: ex.Table;
 
     extern "./util/util.js" static inflight randomUUID(): str;
     extern "./util/util.js" static inflight createdDate(): str;
     extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
     extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
-    
+    // extern "@aws-sdk/client-ses" static inflight sendEmail(payload: Json): str;
+
     init(tableName: str) {
         this.emailQueue = new cloud.Queue();
         this.ck_postboii_emails = new ex.Table(
@@ -26,6 +28,15 @@ class PostBoii  {
                 createdDate: ex.ColumnType.STRING
             }
         );
+        this.ck_postboii_sent_emails = new ex.Table(
+            name: "ck_postboii_sent_emails",
+            primaryKey: "emailUUID",
+            columns: {
+                emailUUID: ex.ColumnType.STRING,
+                createdDate: ex.ColumnType.STRING
+            }
+        );
+        
         // This is the sendEmail functionality
         this.emailQueue.setConsumer(inflight (email: str) => {
             try {
