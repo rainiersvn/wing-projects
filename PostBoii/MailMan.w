@@ -7,20 +7,16 @@ struct Payload {
     subject: str;
 }
 
-class PostBoii  {
-    ck_postboii_emails: ex.Table ;
+class MailMan  {
+    ck_mailman_emails: ex.Table ;
     emailQueue: cloud.Queue;
-    ck_postboii_sent_emails: ex.Table;
 
     extern "./util/util.js" static inflight randomUUID(): str;
     extern "./util/util.js" static inflight createdDate(): str;
-    extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
-    extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
-    // extern "@aws-sdk/client-ses" static inflight sendEmail(payload: Json): str;
 
     init(tableName: str) {
         this.emailQueue = new cloud.Queue();
-        this.ck_postboii_emails = new ex.Table(
+        this.ck_mailman_emails = new ex.Table(
             name: tableName,
             primaryKey: "email",
             columns: {
@@ -28,41 +24,26 @@ class PostBoii  {
                 createdDate: ex.ColumnType.STRING
             }
         );
-        this.ck_postboii_sent_emails = new ex.Table(
-            name: "ck_postboii_sent_emails",
-            primaryKey: "emailUUID",
-            columns: {
-                emailUUID: ex.ColumnType.STRING,
-                createdDate: ex.ColumnType.STRING
-            }
-        );
-        
-        // This is the sendEmail functionality
-        this.emailQueue.setConsumer(inflight (email: str) => {
-            try {
-                log("Sending email...");
-                PostBoii.sendEmail(email);
-            } catch err {
-                log("Error during email sending: ${err}");
-            }
-        } );
     }
     
-    inflight subscribeEmail(email: str): str {
+    setConsumer(fn: inflight (str): str){
+        this.emailQueue.setConsumer(fn);
+    }
+
+    inflight subscribeEmail(email: str): bool {
         try {
+            let emailUUID = MailMan.randomUUID();
+            let createdDate = MailMan.createdDate();
 
-            let emailUUID = PostBoii.randomUUID();
-            let createdDate = PostBoii.createdDate();
-
-            this.ck_postboii_emails.insert(email, {
+            this.ck_mailman_emails.insert(email, {
                 "emailUUID": emailUUID,
                 "createdDate": createdDate
             });
 
-            return "Success";
+            return true;
         } catch err {
             log("Error during email subscription: ${err}");
-            return "Failure";
+            return false;
         } finally {
             log("Email subscribed");
         }
@@ -92,8 +73,8 @@ class PostBoii  {
                 ],
             };
 
-            log("Queuing email template: ${emailTemplate}");
-            this.emailQueue.push(emailTemplate);
+            log("Queuing email template: ${Json.stringify(emailTemplate)}");
+            this.emailQueue.push(Json.stringify(emailTemplate));
         } catch err {
             log("Error during email queueing: ${err}");
         }
@@ -102,7 +83,7 @@ class PostBoii  {
     inflight unsubscribeEmail(messageJson: Json): str {
         try {
             let emailToUnsub = messageJson.get("email");
-            this.ck_postboii_emails.delete(str.fromJson(emailToUnsub));
+            this.ck_mailman_emails.delete(str.fromJson(emailToUnsub));
             log("Email unsubscribed: ${emailToUnsub}");
             return "Unsubscribed";
         } catch err {

@@ -1,28 +1,56 @@
 bring cloud;
 bring http;
+bring aws;
 
-bring "./postBoii.w" as postBoii;
+bring "./MailMan.w" as MailMan;
 bring "./structs.w" as structs;
 
-let postBoiiHandler = new postBoii.PostBoii("cloudkid-emails-wing");
-let postBoiiApi = new cloud.Api();
+let MailManHandler = new MailMan.MailMan("cloudkid-emails-wing");
+let MailManApi = new cloud.Api();
+
+let _sendEmail = new cloud.Function(inflight (email: str) => {
+    log("Sending email ${Json.stringify(email)}");
+    Utils.sendEmail(Json.parse(email));
+});
+
+if let lambda = aws.Function.from(_sendEmail) {
+    lambda.addPolicyStatements([
+        aws.PolicyStatement {
+            actions: ["ses:sendEmail"],
+            effect: aws.Effect.ALLOW,
+            resources: ["*"],
+        },
+    ]);
+}
 
 class Utils {
     extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
+    extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
     init() { }
 }
 
-postBoiiApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+MailManHandler.setConsumer(inflight (email) => {
+    log("Sending email ${Json.stringify(email)}");
+    _sendEmail.invoke(email);
+});
+
+MailManApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     try {
         if let body = request.body {
             let email = Utils.extractJson(body, "email");
             log("Email to subscribe: ${email}");
-            let response = postBoiiHandler.subscribeEmail(email);
-    
-            return {
-                status: 201,
-                body: response
-            };
+            let response = MailManHandler.subscribeEmail(email);
+            if response == true {
+                return {
+                    status: 201,
+                    body: "Success"
+                };
+            } else {
+                return {
+                    status: 500,
+                    body: "Failure to subscribe"
+                };
+            }
         }
     } catch err {
         log("Error during email subscription: ${err}");
@@ -33,16 +61,16 @@ postBoiiApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.
     }
 });
 
-postBoiiApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+MailManApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     try {
         if let body = request.body {
             log("Incoming email payload: ${body}");
             
             let payload: Json = Json.parse(body);
-            postBoiiHandler.queueEmail(payload);
+            MailManHandler.queueEmail(payload);
 
             return {
-                status: 200,
+                status: 201,
                 body: "Email has been sent"
             };
         }
@@ -55,13 +83,13 @@ postBoiiApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiR
     }
 });
 
-postBoiiApi.post("/unsubscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+MailManApi.post("/unsubscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     try {
         if let body = request.body {
             log("Incoming unsubscribe email payload: ${body}");
-            let response = postBoiiHandler.unsubscribeEmail(Json.parse(body));
+            let response = MailManHandler.unsubscribeEmail(Json.parse(body));
             return {
-                status: 204,
+                status: 201,
                 body: response
             };
         }

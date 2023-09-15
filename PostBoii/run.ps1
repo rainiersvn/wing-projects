@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param (
-    [ValidateSet("compile", "apply", "compile-apply")][string]$WingOperation = "compile-apply",
+    [ValidateSet("compile", "apply", "compile-apply", "run")][string]$WingOperation = "compile-apply",
     [string]$Flag
 )
 process {
@@ -10,6 +10,14 @@ process {
         & wing compile -t tf-aws --plugins=plugin.terraform.js main.w
     }
     elseif ($WingOperation -eq "apply") {
+        $workDir = "target\main.tfaws"
+        Set-Location $workDir
+        Write-Host "Terraforming the wings..." 
+        # & terraform init
+        & terraform apply
+        & cd ../../
+    }
+    elseif ($WingOperation -eq "run") {
         $workDir = "target\main.tfaws"
         Set-Location $workDir
         Write-Host "Terraforming the wings..." 
