@@ -5,12 +5,13 @@ bring aws;
 bring "./MailMan.w" as MailMan;
 bring "./structs.w" as structs;
 
-let MailManHandler = new MailMan.MailMan("cloudkid-emails-wing");
-let MailManApi = new cloud.Api();
+let MailManHandler = new MailMan.MailMan("cloudkid-emails-wing") as "MailManHandler";
+let MailManApi = new cloud.Api() as "MailMan";
 
-let _sendEmail = new cloud.Function(inflight (email: str) => {
-    log("Sending email ${Json.stringify(email)}");
-    Utils.sendEmail(Json.parse(email));
+let _sendEmail = new cloud.Function(inflight (emailPayload: str) => {
+    log("Sending email payload ${emailPayload}");
+    let sendEmailReceipt = Utils.sendEmail(Json.parse(emailPayload));
+    MailManHandler.saveEmailReceipt(Json.parse(emailPayload), sendEmailReceipt);
 });
 
 if let lambda = aws.Function.from(_sendEmail) {
@@ -24,22 +25,21 @@ if let lambda = aws.Function.from(_sendEmail) {
 }
 
 class Utils {
-    extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
-    extern "./util/sendEmail.js" static inflight sendEmail(payload: Json): str;
+    // extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
+    extern "./util/sendEmail.ts" static inflight sendEmail(payload: Json): Json;
     init() { }
 }
 
 MailManHandler.setConsumer(inflight (email) => {
-    log("Sending email ${Json.stringify(email)}");
     _sendEmail.invoke(email);
 });
 
 MailManApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
     try {
         if let body = request.body {
-            let email = Utils.extractJson(body, "email");
-            log("Email to subscribe: ${email}");
-            let response = MailManHandler.subscribeEmail(email);
+            // let email = Utils.extractJson(body, "email");
+            log("Email to subscribe: ${body}");
+            let response = MailManHandler.subscribeEmail(body);
             if response == true {
                 return {
                     status: 201,

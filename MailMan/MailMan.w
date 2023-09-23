@@ -8,14 +8,15 @@ struct Payload {
 }
 
 class MailMan  {
-    ck_mailman_emails: ex.Table ;
+    ck_mailman_emails: ex.Table;
+    ck_mailman_emails_receipts: ex.Table;
     emailQueue: cloud.Queue;
 
     extern "./util/util.js" static inflight randomUUID(): str;
     extern "./util/util.js" static inflight createdDate(): str;
 
     init(tableName: str) {
-        this.emailQueue = new cloud.Queue();
+        this.emailQueue = new cloud.Queue() as "MailMan-EmailQueue";
         this.ck_mailman_emails = new ex.Table(
             name: tableName,
             primaryKey: "email",
@@ -23,18 +24,48 @@ class MailMan  {
                 emailUUID: ex.ColumnType.STRING,
                 createdDate: ex.ColumnType.STRING
             }
-        );
+        ) as "MailMan-Emails";
+
+        this.ck_mailman_emails_receipts = new ex.Table(
+            name: tableName,
+            primaryKey: "receipt-email",
+            columns: {
+                email: ex.ColumnType.STRING,
+                emailReceipt: ex.ColumnType.JSON,
+                createdDate: ex.ColumnType.STRING
+            }
+        ) as "MailManEmail-Receipts";
     }
     
-    setConsumer(fn: inflight (str): str){
+    setConsumer(fn: inflight (str): str) {
         this.emailQueue.setConsumer(fn);
     }
 
-    inflight subscribeEmail(email: str): bool {
+    inflight saveEmailReceipt(emailPayload: Json, emailReceiptData: Json): bool {
+        try {
+            let createdDate = MailMan.createdDate();
+            let email = str.fromJson(emailPayload.get("Destination").get("ToAddresses").tryGetAt(0));
+            log("Saving email receipt for email: ${email} with createdDate: ${createdDate}");
+            this.ck_mailman_emails_receipts.insert(email, {
+                "emailReceipt": emailReceiptData,
+                "createdDate": createdDate
+            });
+
+            return true;
+        } catch err {
+            log("Error during email receipt saving: ${err}");
+            return false;
+        } finally {
+            log("Email receipt saved");
+        }
+    }
+    
+    inflight subscribeEmail(emailPayload: Json): bool {
         try {
             let emailUUID = MailMan.randomUUID();
             let createdDate = MailMan.createdDate();
-
+            let email = str.fromJson(emailPayload.get("email"));
+            log("Subscribing email: ${email} with UUID: ${emailUUID} and createdDate: ${createdDate}");
             this.ck_mailman_emails.insert(email, {
                 "emailUUID": emailUUID,
                 "createdDate": createdDate

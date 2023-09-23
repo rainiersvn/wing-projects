@@ -1,6 +1,6 @@
 {
     "Destination": {
-        "ToAddresses": "test@gmail.com"
+        "ToAddresses": ["test@gmail.com"]
     },
     "Message": {
         "Body": {
