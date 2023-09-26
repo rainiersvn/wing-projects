@@ -1,5 +1,6 @@
 bring cloud;
 bring ex;
+bring util;
 
 struct Payload {
     to: str;
@@ -8,16 +9,13 @@ struct Payload {
 }
 
 class MailMan  {
-    ck_mailman_emails: ex.Table;
-    ck_mailman_emails_receipts: ex.Table;
+    emailsTable: ex.Table;
+    emailsTableReceipts: ex.Table;
     emailQueue: cloud.Queue;
-
-    extern "./util/util.js" static inflight randomUUID(): str;
-    extern "./util/util.js" static inflight createdDate(): str;
 
     init(tableName: str) {
         this.emailQueue = new cloud.Queue() as "MailMan-EmailQueue";
-        this.ck_mailman_emails = new ex.Table(
+        this.emailsTable = new ex.Table(
             name: tableName,
             primaryKey: "email",
             columns: {
@@ -26,7 +24,7 @@ class MailMan  {
             }
         ) as "MailMan-Emails";
 
-        this.ck_mailman_emails_receipts = new ex.Table(
+        this.emailsTableReceipts = new ex.Table(
             name: tableName,
             primaryKey: "receipt-email",
             columns: {
@@ -37,16 +35,16 @@ class MailMan  {
         ) as "MailManEmail-Receipts";
     }
     
-    setConsumer(fn: inflight (str): str) {
+    pub setConsumer(fn: inflight (str): str) {
         this.emailQueue.setConsumer(fn);
     }
 
-    inflight saveEmailReceipt(emailPayload: Json, emailReceiptData: Json): bool {
+    pub inflight saveEmailReceipt(emailPayload: Json, emailReceiptData: Json): bool {
         try {
-            let createdDate = MailMan.createdDate();
+            let createdDate = std.Datetime.utcNow().toIso();
             let email = str.fromJson(emailPayload.get("Destination").get("ToAddresses").tryGetAt(0));
             log("Saving email receipt for email: ${email} with createdDate: ${createdDate}");
-            this.ck_mailman_emails_receipts.insert(email, {
+            this.emailsTableReceipts.insert(email, {
                 "emailReceipt": emailReceiptData,
                 "createdDate": createdDate
             });
@@ -60,13 +58,13 @@ class MailMan  {
         }
     }
     
-    inflight subscribeEmail(emailPayload: Json): bool {
+    pub inflight subscribeEmail(emailPayload: Json): bool {
         try {
-            let emailUUID = MailMan.randomUUID();
-            let createdDate = MailMan.createdDate();
+            let emailUUID = util.uuidv4();
+            let createdDate = std.Datetime.utcNow().toIso();
             let email = str.fromJson(emailPayload.get("email"));
             log("Subscribing email: ${email} with UUID: ${emailUUID} and createdDate: ${createdDate}");
-            this.ck_mailman_emails.insert(email, {
+            this.emailsTable.insert(email, {
                 "emailUUID": emailUUID,
                 "createdDate": createdDate
             });
@@ -80,7 +78,7 @@ class MailMan  {
         }
     }
 
-    inflight queueEmail(payload: Json) {
+    pub inflight queueEmail(payload: Json) {
         try {
             let emailTemplate = {
                 Destination: {
@@ -111,10 +109,10 @@ class MailMan  {
         }
     }
     
-    inflight unsubscribeEmail(messageJson: Json): str {
+    pub inflight unsubscribeEmail(messageJson: Json): str {
         try {
             let emailToUnsub = messageJson.get("email");
-            this.ck_mailman_emails.delete(str.fromJson(emailToUnsub));
+            this.emailsTable.delete(str.fromJson(emailToUnsub));
             log("Email unsubscribed: ${emailToUnsub}");
             return "Unsubscribed";
         } catch err {
@@ -123,4 +121,3 @@ class MailMan  {
         }
     }
 }
-  
