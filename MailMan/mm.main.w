@@ -2,19 +2,19 @@ bring cloud;
 bring http;
 bring aws;
 
-bring "./MailMan.w" as MailMan;
+bring "./mailMan.w" as mailMan;
 bring "./structs.w" as structs;
 
-let MailManHandler = new MailMan.MailMan("cloudkid-emails-wing") as "MailManHandler";
-let MailManApi = new cloud.Api() as "MailMan";
+let mailManHandler = new mailMan.MailMan("cloudkid-emails-wing") as "MailManHandler";
+let mailManApi = new cloud.Api() as "MailMan";
 
-let _sendEmail = new cloud.Function(inflight (emailPayload: str) => {
+let sendEmail = new cloud.Function(inflight (emailPayload: str) => {
     log("Sending email payload ${emailPayload}");
     let sendEmailReceipt = Utils.sendEmail(Json.parse(emailPayload));
-    MailManHandler.saveEmailReceipt(Json.parse(emailPayload), sendEmailReceipt);
+    mailManHandler.saveEmailReceipt(Json.parse(emailPayload), sendEmailReceipt);
 });
 
-if let lambda = aws.Function.from(_sendEmail) {
+if let lambda = aws.Function.from(sendEmail) {
     lambda.addPolicyStatements([
         aws.PolicyStatement {
             actions: ["ses:sendEmail"],
@@ -25,79 +25,54 @@ if let lambda = aws.Function.from(_sendEmail) {
 }
 
 class Utils {
-    // extern "./util/util.js" static inflight extractJson(json: Json, key: str): str;
-    extern "./util/sendEmail.ts" static inflight sendEmail(payload: Json): Json;
-    init() { }
+    extern "./util/sendEmail.ts" pub static inflight sendEmail(payload: Json): Json;
 }
 
-MailManHandler.setConsumer(inflight (email) => {
-    _sendEmail.invoke(email);
+mailManHandler.setConsumer(inflight (email) => {
+    sendEmail.invoke(email);
 });
 
-MailManApi.post("/subscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+mailManApi.post("/subscribeEmail", inflight (request) => {
     try {
         if let body = request.body {
-            // let email = Utils.extractJson(body, "email");
             log("Email to subscribe: ${body}");
-            let response = MailManHandler.subscribeEmail(body);
-            if response == true {
-                return {
-                    status: 201,
-                    body: "Success"
-                };
+            if mailManHandler.subscribeEmail(body) {
+                return { status: 201, body: "Success" };
             } else {
-                return {
-                    status: 500,
-                    body: "Failure to subscribe"
-                };
+                return { status: 500, body: "Failure to subscribe" };
             }
         }
     } catch err {
         log("Error during email subscription: ${err}");
-        return {
-            status: 500,
-            body: "There was an error"
-        };
+        return { status: 500, body: "There was an error" };
     }
 });
 
-MailManApi.post("/queueEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+mailManApi.post("/queueEmail", inflight (request) => {
     try {
         if let body = request.body {
             log("Incoming email payload: ${body}");
             
-            let payload: Json = Json.parse(body);
-            MailManHandler.queueEmail(payload);
+            let payload = Json.parse(body);
+            mailManHandler.queueEmail(payload);
 
-            return {
-                status: 201,
-                body: "Email has been sent"
-            };
+            return { status: 201, body: "Email has been sent" };
         }
     } catch err {
         log("Error during email queueing: ${err}");
-        return {
-            status: 500,
-            body: "There was an error sending the email"
-        };
+        return { status: 500, body: "There was an error sending the email" };
     }
 });
 
-MailManApi.post("/unsubscribeEmail", inflight (request: cloud.ApiRequest): cloud.ApiResponse => {
+mailManApi.post("/unsubscribeEmail", inflight (request) => {
     try {
         if let body = request.body {
             log("Incoming unsubscribe email payload: ${body}");
-            let response = MailManHandler.unsubscribeEmail(Json.parse(body));
-            return {
-                status: 201,
-                body: response
-            };
+            let response = mailManHandler.unsubscribeEmail(Json.parse(body));
+            return { status: 201, body: response };
         }
     } catch err {
         log("Error during email unsubscription: ${err}");
-        return {
-            status: 500,
-            body: "There was an error"
-        };
+        return { status: 500, body: "There was an error" };
     }
 });
