@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Wing</title>
+
+    <!-- Tailwind CSS Play CDN https://tailwindcss.com/docs/installation/play-cdn -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.3"
+        integrity="sha384-lVb3Rd/Ca0AxaoZg5sACe8FJKF0tnUgR2Kd7ehUOG5GCcROv5uBIZsOqovBAcWua"
+        crossorigin="anonymous"></script>
+</head>
+
+<body class="flex items-center justify-center h-screen">
+    <div class="text-center">
+        <h1 class="text-2xl font-bold">Hello, Wing</h1>
+        <button id="helloButton" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            hx-trigger="click" hx-swap="outerHTML" hx-target="#hello">
+            Say Hello
+        </button>
+        <div id="hello" class="mt-4"></div>
+    </div>
+    <script>
+        // Fetch the config file and apply the API URL to the button's hx-post attribute
+        // Could be avoided, when proxying the API through the website (cloudfront)
+        fetch('/config.json')
+            .then(response => response.json())
+            .then(data => {
+                var helloButton = document.getElementById('helloButton');
+                helloButton.setAttribute('hx-post', `${data.api}/hello-static`);
+                htmx.process(helloButton);
+            });
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FuelApp</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>FuelApp</h1>
+        <nav>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home">
+        <div class="hero">
+            <h2>Welcome to FuelApp</h2>
+            <p>Your solution for tracking fuel consumption.</p>
+            <a href="#features" class="btn">Learn More</a>
+        </div>
+    </section>
+
+    <section id="features">
+        <div class="feature">
+            <h3>Track Your Fuel</h3>
+            <p>Effortlessly log fuel expenses and mileage.</p>
+        </div>
+        <div class="feature">
+            <h3>Analytics</h3>
+            <p>View insightful charts and statistics.</p>
+        </div>
+        <div class="feature">
+            <h3>Easy to Use</h3>
+            <p>User-friendly interface for a seamless experience.</p>
+        </div>
+    </section>
+
+    <section id="about">
+        <h2>About Us</h2>
+        <p>We are passionate about fuel efficiency and convenience.</p>
+    </section>
+
+    <section id="contact">
+        <h2>Contact Us</h2>
+        <p>If you have any questions, feel free to contact us.</p>
+        <a href="mailto:contact@fuelapp.com">Email Us</a>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 FuelApp</p>
+    </footer>
+</body>
+</html> -->
+
