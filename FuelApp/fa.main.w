@@ -18,7 +18,7 @@ website.addJson("config.json", { api: api.url });
 
 let counter = new cloud.Counter() as "website-counter";
 
-api.get("/about", inflight (request) => {
+api.post("/hello-static", inflight (request) => {
     return {
         status: 200,
         headers: {
@@ -26,5 +26,16 @@ api.get("/about", inflight (request) => {
         "Access-Control-Allow-Origin" => "*",
         },
         body: "<div id=\"hello\" class=\"mt-4\">Hello ${counter.inc()}</div>",
+    };
+});
+
+api.get("/about", inflight (request) => {
+    return {
+        status: 200,
+        headers: {
+        "Content-Type" => "text/html",
+        "Access-Control-Allow-Origin" => "*",
+        },
+        body: "FuelApp API is running",
     };
 });
